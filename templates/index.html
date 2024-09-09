@@ -5,65 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorting Algorithm Visualizer</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .container { margin: 20px; }
-        .visualization { margin-top: 20px; }
-        .bar { display: inline-block; width: 20px; margin: 1px; background: teal; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 2px solid #4a90e2;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #4a90e2;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab.active {
+            background-color: #4a90e2;
+            color: white;
+        }
+        #arrayContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #4a90e2;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            height: 400px;
+            width: 80%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: auto;
+        }
+        .box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 60px;
+            height: 60px;
+            margin: 5px;
+            color: white;
+            font-weight: bold;
+            background-color: #4a90e2;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+        .current-step {
+            background-color: #e94e77;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        button:active {
+            background-color: #2b5a9b;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 2px solid #4a90e2;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 10px;
+            width: 300px;
+        }
+        #sidebar {
+            width: 300px;
+            padding: 20px;
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-left: 20px;
+        }
+        .step-description {
+            margin-bottom: 10px;
+        }
+        .step-description span {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Sorting Algorithm Visualizer</h1>
-        <label for="array-input">Enter Array (comma-separated values):</label>
-        <input type="text" id="array-input">
-        
-        <label for="algorithm-select">Choose Sorting Algorithm:</label>
-        <select id="algorithm-select">
-            <option value="insertion_sort">Insertion Sort</option>
-            <option value="merge_sort">Merge Sort</option>
-            <option value="quicksort">Quick Sort</option>
-            <option value="counting_sort">Counting Sort</option>
-            <option value="radix_sort">Radix Sort</option>
-        </select>
-
-        <button id="sort-button">Sort</button>
-
-        <div class="visualization" id="visualization"></div>
+    <h1>Sorting Algorithm Visualizer</h1>
+    <div id="tabs">
+        <div class="tab active" onclick="setAlgorithm('insertion')">Insertion Sort</div>
+        <div class="tab" onclick="setAlgorithm('selection')">Selection Sort</div>
+        <div class="tab" onclick="setAlgorithm('bubble')">Bubble Sort</div>
+        <div class="tab" onclick="setAlgorithm('merge')">Merge Sort</div>
+        <div class="tab" onclick="setAlgorithm('quick')">Quick Sort</div>
+    </div>
+    <div>
+        <input type="text" id="arrayInput" placeholder="Enter numbers separated by commas" />
+        <button onclick="setArray()">Set Array</button>
+    </div>
+    <button onclick="fetchSteps()">Generate Steps</button>
+    <div id="arrayContainer"></div>
+    <div id="controls">
+        <button onclick="stepForward()">Step Forward</button>
+        <button onclick="stepBackward()">Step Backward</button>
+    </div>
+    <div id="sidebar">
+        <div id="description"></div>
     </div>
 
     <script>
-        document.getElementById('sort-button').addEventListener('click', function() {
-            const arrayInput = document.getElementById('array-input').value.split(',').map(Number);
-            const algorithm = document.getElementById('algorithm-select').value;
+        let array = [];
+        let steps = [];
+        let currentStep = 0;
+        let interval;
+        let currentAlgorithm = 'insertion'; // Default algorithm
 
-            fetch('/sort', {
+        function setAlgorithm(algorithm) {
+            currentAlgorithm = algorithm;
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase().includes(algorithm));
+            });
+        }
+
+        function drawArray(arr) {
+            const container = document.getElementById('arrayContainer');
+            container.innerHTML = ''; // Clear previous boxes
+            arr.forEach(num => {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.textContent = num; // Show number inside the box
+                container.appendChild(box);
+            });
+            updateDescription(); // Update sidebar description
+        }
+
+        async function fetchSteps() {
+            if (array.length === 0) {
+                alert("Please set an array first.");
+                return;
+            }
+            const response = await fetch(`/${currentAlgorithm}_sort_steps`, { // Adjust endpoint based on selected algorithm
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ array: arrayInput, algorithm: algorithm }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                visualizeSortingSteps(data);
+                body: JSON.stringify({ array })
             });
-        });
+            steps = await response.json();
+            currentStep = 0;
+            drawArray(steps[currentStep]);
+        }
 
-        function visualizeSortingSteps(steps) {
-            const visualizationDiv = document.getElementById('visualization');
-            visualizationDiv.innerHTML = '';  // Clear previous visualization
+        function setArray() {
+            const input = document.getElementById('arrayInput').value;
+            array = input.split(',').map(Number).filter(num => !isNaN(num));
+            if (array.length === 0) {
+                alert("Invalid array. Please enter numbers separated by commas.");
+                return;
+            }
+            drawArray(array);
+        }
 
-            steps.forEach((step, index) => {
-                setTimeout(() => {
-                    visualizationDiv.innerHTML = '';  // Clear for the next step
-                    step.forEach(value => {
-                        const bar = document.createElement('div');
-                        bar.classList.add('bar');
-                        bar.style.height = `${value * 5}px`;  // Scale for visualization
-                        visualizationDiv.appendChild(bar);
-                    });
-                }, index * 500);  // Delay between each step
-            });
+        function updateDescription() {
+            const description = document.getElementById('description');
+            // Update this based on the current step and algorithm
+            description.innerHTML = `<div class="step-description">
+                <span>Current element:</span> ${array[currentStep] || 'N/A'}<br>
+                <!-- Add more detailed descriptions for each step here -->
+            </div>`;
+        }
+
+        function start() {
+            if (interval) return;
+            interval = setInterval(() => {
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+                    drawArray(steps[currentStep]);
+                } else {
+                    clearInterval(interval);
+                    interval = null;
+                }
+            }, 500);
+        }
+
+        function pause() {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        function stepForward() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                drawArray(steps[currentStep]);
+            }
+        }
+
+        function stepBackward() {
+            if (currentStep > 0) {
+                currentStep--;
+                drawArray(steps[currentStep]);
+            }
         }
     </script>
 </body>

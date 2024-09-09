@@ -1,4 +1,5 @@
 def insertion_sort(arr):
+    steps = [arr.copy()]
     for i in range(1, len(arr)):
         key = arr[i]
         j = i - 1
@@ -6,83 +7,82 @@ def insertion_sort(arr):
             arr[j + 1] = arr[j]
             j -= 1
         arr[j + 1] = key
-        yield arr
+        steps.append(arr.copy())
+    return steps
 
-def merge_sort(arr):
-    def merge(left, right):
-        result = []
-        while left and right:
-            if left[0] < right[0]:
-                result.append(left.pop(0))
-            else:
-                result.append(right.pop(0))
-        result.extend(left or right)
-        return result
+def selection_sort(arr):
+    steps = [arr.copy()]
+    for i in range(len(arr)):
+        min_idx = i
+        for j in range(i + 1, len(arr)):
+            if arr[j] < arr[min_idx]:
+                min_idx = j
+        arr[i], arr[min_idx] = arr[min_idx], arr[i]
+        steps.append(arr.copy())
+    return steps
 
-    def merge_sort_recursive(array):
-        if len(array) <= 1:
-            return array
-        mid = len(array) // 2
-        left = merge_sort_recursive(array[:mid])
-        right = merge_sort_recursive(array[mid:])
-        merged = merge(left, right)
-        return merged
+def bubble_sort(arr):
+    steps = [arr.copy()]
+    n = len(arr)
+    for i in range(n):
+        swapped = False
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+                swapped = True
+        if not swapped:
+            break
+        steps.append(arr.copy())
+    return steps
 
-    sorted_arr = merge_sort_recursive(arr)
-    yield sorted_arr
+def merge(arr, left, mid, right):
+    n1 = mid - left + 1
+    n2 = right - mid
+    L = [0] * n1
+    R = [0] * n2
+    for i in range(n1):
+        L[i] = arr[left + i]
+    for j in range(n2):
+        R[j] = arr[mid + 1 + j]
+    i = 0
+    j = 0
+    k = left
+    while i < n1 and j < n2:
+        if L[i] <= R[j]:
+            arr[k] = L[i]
+            i += 1
+        else:
+            arr[k] = R[j]
+            j += 1
+        k += 1
+    while i < n1:
+        arr[k] = L[i]
+        i += 1
+        k += 1
+    while j < n2:
+        arr[k] = R[j]
+        j += 1
+        k += 1
 
-def quicksort(arr):
-    if len(arr) <= 1:
-        yield arr
-        return
+def merge_sort(arr, left, right):
+    if left < right:
+        mid = (left + right) // 2
+        merge_sort(arr, left, mid)
+        merge_sort(arr, mid + 1, right)
+        merge(arr, left, mid, right)
 
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    yield from quicksort(left)
-    yield middle
-    yield from quicksort(right)
+def quick_sort(arr, low, high):
+    if low < high:
+        pi = partition(arr, low, high)
+        quick_sort(arr, low, pi - 1)
+        quick_sort(arr, pi + 1, high)
 
-def counting_sort(arr):
-    max_val = max(arr)
-    count = [0] * (max_val + 1)
-    for num in arr:
-        count[num] += 1
-    index = 0
-    for i, cnt in enumerate(count):
-        while cnt > 0:
-            arr[index] = i
-            yield arr
-            index += 1
-            cnt -= 1
-
-def radix_sort(arr):
-    def counting_sort_by_digit(arr, exp):
-        n = len(arr)
-        output = [0] * n
-        count = [0] * 10
-
-        for i in range(n):
-            index = (arr[i] // exp) % 10
-            count[index] += 1
-
-        for i in range(1, 10):
-            count[i] += count[i - 1]
-
-        i = n - 1
-        while i >= 0:
-            index = (arr[i] // exp) % 10
-            output[count[index] - 1] = arr[i]
-            count[index] -= 1
-            i -= 1
-
-        for i in range(n):
-            arr[i] = output[i]
-            yield arr
-
-    max_val = max(arr)
-    exp = 1
-    while max_val // exp > 0:
-        yield from counting_sort_by_digit(arr, exp)
-        exp *= 10
+def partition(arr, low, high):
+    pivot = arr[high]
+    i = low - 1
+    for j in range(low, high):
+        if arr[j] < pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1

@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from sort import insertion_sort, merge_sort, quicksort, counting_sort, radix_sort
+from sort import insertion_sort, selection_sort, bubble_sort, merge_sort, quick_sort
 
 app = Flask(__name__)
 
@@ -7,26 +7,42 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/sort', methods=['POST'])
-def sort_array():
+@app.route('/insertion_sort_steps', methods=['POST'])
+def insertion_sort_steps():
     data = request.json
-    arr = data.get("array")
-    algorithm = data.get("algorithm")
+    array = data.get('array', [])
+    steps = insertion_sort(array)
+    return jsonify(steps)
 
-    if algorithm == 'insertion_sort':
-        sorting_steps = list(insertion_sort(arr))
-    elif algorithm == 'merge_sort':
-        sorting_steps = list(merge_sort(arr))
-    elif algorithm == 'quicksort':
-        sorting_steps = list(quicksort(arr))
-    elif algorithm == 'counting_sort':
-        sorting_steps = list(counting_sort(arr))
-    elif algorithm == 'radix_sort':
-        sorting_steps = list(radix_sort(arr))
-    else:
-        return jsonify({"error": "Invalid algorithm"}), 400
+@app.route('/selection_sort_steps', methods=['POST'])
+def selection_sort_steps():
+    data = request.json
+    array = data.get('array', [])
+    steps = selection_sort(array)
+    return jsonify(steps)
 
-    return jsonify(sorting_steps)
+@app.route('/bubble_sort_steps', methods=['POST'])
+def bubble_sort_steps():
+    data = request.json
+    array = data.get('array', [])
+    steps = bubble_sort(array)
+    return jsonify(steps)
+
+@app.route('/merge_sort_steps', methods=['POST'])
+def merge_sort_steps():
+    data = request.json
+    array = data.get('array', [])
+    merge_sort(array, 0, len(array) - 1)
+    steps = [array.copy()]  # Only one step in merge sort: the final sorted array
+    return jsonify(steps)
+
+@app.route('/quick_sort_steps', methods=['POST'])
+def quick_sort_steps():
+    data = request.json
+    array = data.get('array', [])
+    quick_sort(array, 0, len(array) - 1)
+    steps = [array.copy()]  # Only one step in quick sort: the final sorted array
+    return jsonify(steps)
 
 if __name__ == '__main__':
     app.run(debug=True)
