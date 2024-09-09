@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualizer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { margin: 20px; }
+        .visualization { margin-top: 20px; }
+        .bar { display: inline-block; width: 20px; margin: 1px; background: teal; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sorting Algorithm Visualizer</h1>
+        <label for="array-input">Enter Array (comma-separated values):</label>
+        <input type="text" id="array-input">
+        
+        <label for="algorithm-select">Choose Sorting Algorithm:</label>
+        <select id="algorithm-select">
+            <option value="insertion_sort">Insertion Sort</option>
+            <option value="merge_sort">Merge Sort</option>
+            <option value="quicksort">Quick Sort</option>
+            <option value="counting_sort">Counting Sort</option>
+            <option value="radix_sort">Radix Sort</option>
+        </select>
+
+        <button id="sort-button">Sort</button>
+
+        <div class="visualization" id="visualization"></div>
+    </div>
+
+    <script>
+        document.getElementById('sort-button').addEventListener('click', function() {
+            const arrayInput = document.getElementById('array-input').value.split(',').map(Number);
+            const algorithm = document.getElementById('algorithm-select').value;
+
+            fetch('/sort', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ array: arrayInput, algorithm: algorithm }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                visualizeSortingSteps(data);
+            });
+        });
+
+        function visualizeSortingSteps(steps) {
+            const visualizationDiv = document.getElementById('visualization');
+            visualizationDiv.innerHTML = '';  // Clear previous visualization
+
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    visualizationDiv.innerHTML = '';  // Clear for the next step
+                    step.forEach(value => {
+                        const bar = document.createElement('div');
+                        bar.classList.add('bar');
+                        bar.style.height = `${value * 5}px`;  // Scale for visualization
+                        visualizationDiv.appendChild(bar);
+                    });
+                }, index * 500);  // Delay between each step
+            });
+        }
+    </script>
+</body>
+</html>
